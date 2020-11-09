@@ -62,7 +62,7 @@ Igraph = replaceLayer(Igraph,classLayer.Name,newClassLayer);
 pixelRange = [-30 30];
 scaleRange = [0.9 1.1];
 miniBatchSize = 10;
-MaxEpochs = 10;
+MaxEpochs = 1;
 InitialLearningRate = 0.001;
 
 imageAugmenter = imageDataAugmenter( ...
@@ -92,7 +92,7 @@ net = trainNetwork(augimdsTrain,Igraph,options);
 %% Validation 
 
 % make predictions for validation dataset
-YPred = classify(trainedNet,augimdsValidation);
+YPred = classify(net,augimdsValidation);
 
 % print validation accuracy 
 accuracy = mean(YPred == imdsValidation.Labels)
@@ -100,25 +100,10 @@ accuracy = mean(YPred == imdsValidation.Labels)
 % show classification examples from the network
 idx = randperm(numel(imdsValidation.Files),4);
 figure
-for i = 1:8
+for i = 1:4
     subplot(2,2,i)
     I = readimage(imdsValidation,idx(i));
     imshow(I)
     label = YPred(idx(i));
    title(string(label))
 end
-
-%% Validation Result Analysis
-
-%Indicate high rank prediction by histogram
-[~,idx] = sort(zscore, 'descend');
-idx = idx(5:-1:1);
-classNamesTop = net.Layers(end).ClassNames(idx);
-scoresTop = scores(idx);
-
-figure
-barh(scoresTop)
-xlim([0 1])
-title('Top 5 Predictions')
-xlabel('Probability')
-yticklabels(classNamesTop)
