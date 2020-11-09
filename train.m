@@ -1,20 +1,27 @@
-%Load dataset
-unzip('Imageset.zip');
-imds = imageDatastore('C:\Users\스마트 구조실\Desktop\concrete_image\Imageset','FileExtensions', {'.jpg'},...
+% reset all variables, command window and close all windows 
+% before running the code. 
+clc, clear all, close all 
+
+%% Load dataset
+
+% unzip is only required when initial download is completed. 
+% unzip('Imageset.zip');
+
+imds = imageDatastore('Imageset','FileExtensions', {'.jpg'},...
     'IncludeSubfolders',true, ...
-    'LabelSource','foldernames')
+    'LabelSource','foldernames');
 imds.Labels;
 
 %Divide dataset by train dataset & test dataset
 [imdsTrain, imdsValidation] = splitEachLabel(imds, 0.7, 'randomized');
 
-%Load Pretrained Network
-net = resnet101;    %=[net = resnet101('Weights', 'imagenet')]
+%% Load Pretrained Network
+net = resnet101;    
 
 net.Layers(1)
 inputSize = net.Layers(1).InputSize;
 
-%Replace Final Layers
+%% Replace Final Layers
 if isa(net, 'SeriesNetwork')
    Igraph = layerGraph(net.Layers);
 else
@@ -51,9 +58,13 @@ Igraph = replaceLayer(Igraph,classLayer.Name,newClassLayer);
 %layers(1:10) = freezeWeights(layers(1:10));
 %Igraph = createLgraphUsingConnections(layers,connections);
 
-%Data Augmentation
+%% Data Augmentation
 pixelRange = [-30 30];
 scaleRange = [0.9 1.1];
+miniBatchSize = 10;
+MaxEpochs = 10;
+InitialLearningRate = 0.001;
+
 imageAugmenter = imageDataAugmenter( ...
     'RandXReflection',true, ...
     'RandXTranslation',pixelRange, ...
@@ -64,23 +75,29 @@ augimdsTrain = augmentedImageDatastore(inputSize(1:2),imdsTrain, ...
     'DataAugmentation',imageAugmenter);
     
 augimdsValidation = augmentedImageDatastore(inputSize(1:2),imdsValidation);
-
-miniBatchSize = 10;
 valFrequency = floor(numel(augimdsTrain.Files)/miniBatchSize);
 options = trainingOptions('sgdm', ...
     'MiniBatchSize',miniBatchSize, ...
-    'MaxEpochs',10, ...
-    'InitialLearnRate', 0.0001, ...
+    'MaxEpochs',MaxEpochs, ...
+    'InitialLearnRate', InitialLearningRate, ...
     'Shuffle','every-epoch', ...
     'ValidationData',augimdsValidation, ...
     'ValidationFrequency',valFrequency, ...
     'Verbose',false, ...
     'Plots','training-progress');
 
+%% Train network
 net = trainNetwork(augimdsTrain,Igraph,options);
 
+%% Validation 
+
+% make predictions for validation dataset
 YPred = classify(trainedNet,augimdsValidation);
+
+% print validation accuracy 
 accuracy = mean(YPred == imdsValidation.Labels)
+
+% show classification examples from the network
 idx = randperm(numel(imdsValidation.Files),4);
 figure
 for i = 1:8
@@ -90,6 +107,8 @@ for i = 1:8
     label = YPred(idx(i));
    title(string(label))
 end
+
+%% Validation Result Analysis
 
 %Indicate high rank prediction by histogram
 [~,idx] = sort(zscore, 'descend');
