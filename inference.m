@@ -1,30 +1,27 @@
 %Load dataset
-unzip('Imageset.zip');
-imds = imageDatastore('C:\Users\스마트 구조실\Desktop\concrete_image\Concrete\Imageset','LabelSource','foldername','FileExtensions', {'.jpg'})
-imds.Labels;
+    % unzip('Imageset.zip'); % code for unzip is not necessary 
+    % Recommend not to include root directory in your code. 
+imds = imageDatastore('Imageset', 'IncludeSubfolders', true , ...
+    'LabelSource','foldername','FileExtensions', {'.jpg'});
 
 %Divide dataset by train dataset & test dataset
 [imdsTrain, imdsValidation] = splitEachLabel(imds, 0.7, 'randomized');
 
 %Load Pretrained Network
-net = resnet101;    %=[net = resnet101('Weights', 'imagenet')]
+net = resnet101;    
 
 inputSize = net.Layers(1).InputSize;
 
-%Layers 속성의 마지막 요소는 분류 출력 계층, 이 계층의 ClassNames 속성은 신경망이 학습한 클래스의 이름을 포함, 
-%총 1,000개 중에서 임의로 10개의 클래스 이름 표시
-classNames = net.Layers(end).ClassNames;
-numClasses = numel(classNames);
-disp(classNames(randperm(numClasses,10)));
-
 %Read Image from Dataset
-I = imread('P-041-E1_s000202000__0,2048)_.jpg');
-figure
+    % recommend random choose from the image set 
+img_list = dir(fullfile('Imageset', string(imds.Labels(1)), '*.jpg')); 
+I = imread(fullfile(img_list(1).folder, img_list(1).name));
+figure;
 imshow(I);
 
 %Resize images according to the network inputsize
 I = imresize(I,inputSize(1:2));
-figure
+figure; 
 imshow(I)
 
 %Classify Dataset
@@ -48,3 +45,7 @@ xlim([0 1])
 title('Top 5 Predictions')
 xlabel('Probability')
 yticklabels(classNamesTop)
+
+
+
+
