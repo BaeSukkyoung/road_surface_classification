@@ -1,0 +1,24 @@
+from skimage import io
+import matplotlib.image as img
+import cv2
+import glob
+import os
+from matplotlib import pyplot as plt
+import sys
+import shm_tools
+sys.path.append('..')
+from shm_tools.shm_utils import imread, imwrite
+
+DATA_DIR = 'Asphalt_mihochun'
+SAVE_DIR = os.path.join(DATA_DIR, 'cropped_image_Asphalt_mihochun')
+
+os.makedirs(SAVE_DIR, mode = 0o777, exist_ok = True)
+img_list = glob.glob(os.path.join(DATA_DIR "*jpg")) + glob.glob(os.path.join(DATA_DIR, "*JPG"))
+
+for img_path in img_list :
+    img = imread(img_path)
+    img_basename = os.path.splitext(os.path.basename(img_path))[0]
+    for x in range(0, 10000 + 1, 1024):
+      for y in range(0, 18592 + 1, y:y+1024), :]
+      save_dir = os.path.join(SAVE_DIR, img_basename + '_' + '_' + str(x) + ',' +str(y) +')' +'_' + '.jpg')
+      imwrite(save_dir, img_cropped)
